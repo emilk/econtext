@@ -56,7 +56,7 @@ thread_local! {
 
 /// The trait for an entry in the stack
 pub trait Entry {
-	fn print(&self);
+	fn write(&self, writer: &mut dyn std::fmt::Write);
 }
 
 // ----------------------------------------------------------------------------
@@ -75,14 +75,16 @@ pub struct DataScope<Data> {
 }
 
 impl<Data: Debug> Entry for DataScope<Data> {
-	fn print(&self) {
-		eprintln!(
-			"  {} {}:{}: {} {:?}",
+	fn write(&self, writer: &mut dyn std::fmt::Write) {
+		write!(
+			writer,
+			"  {} {}:{}: {} {:?}\n",
 			self.module_path, self.file, self.line, self.message, self.data
-		);
+		)
+		.ok();
 		unsafe {
 			if let Some(previous) = self.previous.as_ref().and_then(|p| p.as_ref()) {
-				previous.print();
+				previous.write(writer);
 			}
 		}
 	}
@@ -132,12 +134,31 @@ impl std::fmt::Debug for EmptyDebug {
 ///   example examples/example.rs:20: main()
 /// ```
 pub fn print_econtext() {
+	let context = econtext_string();
+	if !context.is_empty() {
+		eprintln!("ERROR CONTEXT:");
+		eprintln!("{}", context);
+	}
+}
+
+/// Returns the error context as a string.
+///
+/// ``` text
+///   example examples/example.rs:7: i 4
+///   example examples/example.rs:4: example::process_file "file.txt"
+///   example examples/example.rs:13: example::do_stuff
+///   example examples/example.rs:20: main()
+/// ```
+pub fn econtext_string() -> String {
 	ERROR_STACK.with(|value| unsafe {
 		if let Some(entry) = value.borrow().as_ref().and_then(|p| p.as_ref()) {
-			eprintln!("ERROR CONTEXT:");
-			entry.print();
+			let mut output = String::new();
+			entry.write(&mut output);
+			output
+		} else {
+			Default::default()
 		}
-	});
+	})
 }
 
 /// Call this once to add a panic hook that calls `print_econtext()`.

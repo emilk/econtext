@@ -1,0 +1,19 @@
+[package]
+name = "econtext"
+version = "0.1.1"
+authors = ["Emil Ernerfeldt <emilernerfeldt@gmail.com>"]
+description = "Fast and simple error context on panics"
+edition = "2018"
+homepage = "https://github.com/emilk/econtext"
+repository = "https://github.com/emilk/econtext"
+license = "MIT OR Apache-2.0"
+categories = ["development-tools::debugging"]
+keywords = ["error", "context", "panic", "debug"]
+include = [ "**/*.rs", "Cargo.toml"]
+
+[dev-dependencies]
+criterion = { version = "0.3", default-features = false }
+
+[[bench]]
+name = "benchmark"
+harness = false
